@@ -19,16 +19,13 @@
   const startChat = async () => {
     try {
       userMediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: false,
         video: true,
       });
       showChatRoom();
-
-      signaling = new WebSocket("ws://web-cam-webtrtc.herokuapp.com");
+      http: signaling = new WebSocket("wss://web-cam-webcam.herokuapp.com/");
       peerConnection = createPeerConnection();
-
       addMessageHandler();
-
       userMediaStream
         .getTracks()
         .forEach((track) =>
