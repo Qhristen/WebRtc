@@ -1,21 +1,24 @@
-<html lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./css/styles.css" />
-    <title>webcam</title>
-  </head>
+    <title>VideoChat</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"></script></head
+  >s
   <body>
     <div id="chat-room" style="display: none;">
-      <div id="video">
-        <video id="self-view" controls autoplay></video>
-        <video id="remote-view" controls autoplay></video>
+      <!-- <video id="self-view" autoplay></video> -->
+      <div id="remote-view-container">
+        <video id="remote-view" autoplay></video>
       </div>
     </div>
-    
-      <button id="start">Start Webcam</button>
-      <!-- <button id="stop">stop Video</button> -->
+
+    <div id="start">
+      <input id="code-input" placeholder="Enter your code" /> <br />
+      <button id="start-button" disabled>Start Video Chat</button>
     </div>
-    <script src="./js/main.js"></script>
   </body>
+
+  <script src="/js/main.js"></script>
 </html>
