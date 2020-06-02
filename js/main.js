@@ -6,47 +6,45 @@
     CANDIDATE: "CANDIDATE",
   };
 
-  const MAXIMUM_MESSAGE_SIZE = 65535;
-  const END_OF_FILE_MESSAGE = "EOF";
-  let code;
   let peerConnection;
   let signaling;
   const senders = [];
-  let userMediaStream;
-  let displayMediaStream;
-  let file;
+  let code = 12345678999;
+  let stream;
+
+  document.getElementById("start").addEventListener("click", async () => {
+    startChat();
+  });
 
   const startChat = async () => {
     try {
-      userMediaStream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: true,
       });
       showChatRoom();
-      http: signaling = new WebSocket("wss://web-cam-webcam.herokuapp.com/");
-      peerConnection = createPeerConnection();
+      signaling = new WebSocket("ws://127.0.0.1:1337");
+      const peerConnection = createPeerConnection();
       addMessageHandler();
-      userMediaStream
+      stream
         .getTracks()
         .forEach((track) =>
-          senders.push(peerConnection.addTrack(track, userMediaStream))
+          senders.push(peerConnection.addTrack(track, stream))
         );
-      document.getElementById("self-view").srcObject = userMediaStream;
+      document.getElementById("self-view").srcObject = stream;
     } catch (err) {
       console.error(err);
     }
   };
 
-  const createPeerConnection = () => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{urls: "stun:stun.m.test.com:19000"}],
+  const createPeerConnection = (signaling) => {
+    peerConnection = new RTCPeerConnection({
+      iceServers: [{urls: "stun:stun.l.test.com:19000"}],
     });
-
-    pc.onnegotiationneeded = async () => {
+    peerConnection.onnegotiationneeded = async () => {
       await createAndSendOffer();
     };
-
-    pc.onicecandidate = (iceEvent) => {
+    peerConnection.onicecandidate = (iceEvent) => {
       if (iceEvent && iceEvent.candidate) {
         sendMessage({
           message_type: MESSAGE_TYPE.CANDIDATE,
@@ -54,14 +52,12 @@
         });
       }
     };
-
-    pc.ontrack = (event) => {
+    peerConnection.ontrack = (event) => {
       const video = document.getElementById("remote-view");
-      video.srcObject = userMediaStream;
-      // video.srcObject = event.streams[0];
+      video.srcObject = stream;
     };
 
-    pc.ondatachannel = (event) => {
+    peerConnection.ondatachannel = (event) => {
       const {channel} = event;
       channel.binaryType = "arraybuffer";
 
@@ -90,9 +86,8 @@
       };
     };
 
-    return pc;
+    return peerConnection;
   };
-
   const addMessageHandler = () => {
     signaling.onmessage = async (message) => {
       const data = JSON.parse(message.data);
@@ -100,7 +95,6 @@
       if (!data) {
         return;
       }
-
       const {message_type, content} = data;
       try {
         if (message_type === MESSAGE_TYPE.CANDIDATE && content) {
@@ -125,6 +119,14 @@
       }
     };
   };
+  const createAndSendOffer = async () => {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    sendMessage({
+      message_type: MESSAGE_TYPE.SDP,
+      content: offer,
+    });
+  };
 
   const sendMessage = (message) => {
     if (code) {
@@ -136,40 +138,9 @@
       );
     }
   };
-
-  const createAndSendOffer = async () => {
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
-    sendMessage({
-      message_type: MESSAGE_TYPE.SDP,
-      content: offer,
-    });
-  };
-
   const showChatRoom = () => {
+    document.getElementById("self-view").style.display = "none";
     document.getElementById("start").style.display = "none";
-    document.getElementById("chat-room").style.display = "grid";
+    document.getElementById("chat-room").style.display = "block";
   };
-
-  document
-    .getElementById("code-input")
-    .addEventListener("input", async (event) => {
-      const {value} = event.target;
-      if (value.length > 8) {
-        document.getElementById("start-button").disabled = false;
-        code = value;
-      } else {
-        document.getElementById("start-button").disabled = true;
-        code = null;
-      }
-    });
-
-  document
-    .getElementById("start-button")
-    .addEventListener("click", async () => {
-      if (code) {
-        startChat();
-      }
-    });
 })();
